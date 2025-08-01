@@ -1,96 +1,77 @@
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@300;400;500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
-All colors MUST be HSL.
-*/
+/* VaultFUT Design System - Premium Vault Theme */
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    /* Vault Color Palette */
+    --background: 0 0% 6%;          /* #0f0f0f - Deep vault black */
+    --foreground: 45 100% 95%;       /* Light text */
 
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card: 0 0% 12%;              /* #1e1e1e - Dark vault panels */
+    --card-foreground: 45 100% 95%;
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover: 0 0% 12%;
+    --popover-foreground: 45 100% 95%;
 
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
+    --primary: 51 100% 50%;          /* #ffd700 - Gold coins/highlights */
+    --primary-foreground: 0 0% 6%;
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 174 100% 40%;       /* #00cc99 - Success green */
+    --secondary-foreground: 0 0% 6%;
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    --muted: 0 0% 20%;              /* Muted vault metal */
+    --muted-foreground: 0 0% 60%;
 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    --accent: 51 100% 50%;          /* Gold accent */
+    --accent-foreground: 0 0% 6%;
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 0 100% 65%;      /* #ff4d4d - Warning red */
+    --destructive-foreground: 0 0% 95%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    --border: 0 0% 20%;             /* Dark metallic borders */
+    --input: 0 0% 15%;              /* Input backgrounds */
+    --ring: 51 100% 50%;            /* Gold focus rings */
+    
+    /* Vault specific colors */
+    --vault-gold: 51 100% 50%;      /* Pure gold */
+    --vault-metal: 0 0% 25%;        /* Metallic surface */
+    --vault-glow: 51 100% 60%;      /* Golden glow effect */
+    --success-green: 174 100% 40%;  /* Success actions */
+    --warning-red: 0 100% 65%;      /* Warnings/broadcasts */
+
+    /* Gradients */
+    --gradient-vault: linear-gradient(135deg, hsl(var(--vault-metal)), hsl(var(--background)));
+    --gradient-gold: linear-gradient(135deg, hsl(var(--vault-gold)), hsl(var(--vault-glow)));
+    --gradient-glass: linear-gradient(135deg, rgba(255, 215, 0, 0.1), rgba(255, 215, 0, 0.05));
+    
+    /* Shadows & Effects */
+    --shadow-vault: 0 25px 50px -12px rgba(0, 0, 0, 0.8);
+    --shadow-gold: 0 10px 30px -10px rgba(255, 215, 0, 0.4);
+    --shadow-glow: 0 0 40px rgba(255, 215, 0, 0.3);
+    
+    /* Animations */
+    --transition-vault: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-smooth: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    
+    /* Typography */
+    --font-vault: 'Orbitron', monospace;
+    --font-body: 'Inter', sans-serif;
 
     --radius: 0.5rem;
 
-    --sidebar-background: 0 0% 98%;
-
-    --sidebar-foreground: 240 5.3% 26.1%;
-
-    --sidebar-primary: 240 5.9% 10%;
-
-    --sidebar-primary-foreground: 0 0% 98%;
-
-    --sidebar-accent: 240 4.8% 95.9%;
-
-    --sidebar-accent-foreground: 240 5.9% 10%;
-
-    --sidebar-border: 220 13% 91%;
-
-    --sidebar-ring: 217.2 91.2% 59.8%;
-  }
-
-  .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --sidebar-background: 0 0% 10%;
+    --sidebar-foreground: 45 100% 95%;
+    --sidebar-primary: 51 100% 50%;
+    --sidebar-primary-foreground: 0 0% 6%;
+    --sidebar-accent: 0 0% 15%;
+    --sidebar-accent-foreground: 45 100% 95%;
+    --sidebar-border: 0 0% 20%;
+    --sidebar-ring: 51 100% 50%;
   }
 }
 
@@ -101,5 +82,89 @@ All colors MUST be HSL.
 
   body {
     @apply bg-background text-foreground;
+    font-family: var(--font-body);
+    background-image: 
+      radial-gradient(circle at 20% 80%, rgba(255, 215, 0, 0.05) 0%, transparent 50%),
+      radial-gradient(circle at 80% 20%, rgba(0, 204, 153, 0.05) 0%, transparent 50%);
   }
+  
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-vault);
+  }
+}
+
+@layer components {
+  /* Vault-specific component styles */
+  .vault-card {
+    @apply bg-card/80 backdrop-blur-xl border border-border/30 rounded-xl p-6;
+    background: var(--gradient-glass);
+    box-shadow: var(--shadow-vault);
+  }
+  
+  .gold-glow {
+    box-shadow: var(--shadow-gold);
+    transition: var(--transition-vault);
+  }
+  
+  .gold-glow:hover {
+    box-shadow: var(--shadow-glow);
+    transform: translateY(-2px);
+  }
+  
+  .vault-button {
+    @apply bg-primary hover:bg-primary/90 text-primary-foreground font-semibold;
+    @apply px-8 py-4 rounded-lg transition-all duration-300;
+    @apply shadow-lg hover:shadow-gold hover:-translate-y-1;
+    font-family: var(--font-vault);
+    background: var(--gradient-gold);
+  }
+  
+  .vault-input {
+    @apply bg-input/80 backdrop-blur-sm border border-border/50 rounded-lg;
+    @apply px-4 py-3 text-foreground placeholder:text-muted-foreground;
+    @apply focus:border-primary focus:ring-2 focus:ring-primary/20;
+    transition: var(--transition-smooth);
+  }
+}
+
+@layer utilities {
+  /* Vault Animations */
+  @keyframes vault-open {
+    0% { transform: rotateY(0deg) scale(1); }
+    50% { transform: rotateY(-15deg) scale(1.05); }
+    100% { transform: rotateY(-90deg) scale(1.1); }
+  }
+  
+  @keyframes coin-fall {
+    0% { 
+      transform: translateY(-100vh) rotate(0deg);
+      opacity: 0;
+    }
+    10% { opacity: 1; }
+    90% { opacity: 1; }
+    100% { 
+      transform: translateY(100vh) rotate(720deg);
+      opacity: 0;
+    }
+  }
+  
+  @keyframes pulse-gold {
+    0%, 100% { 
+      box-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
+    }
+    50% { 
+      box-shadow: 0 0 40px rgba(255, 215, 0, 0.6);
+    }
+  }
+  
+  @keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-5px); }
+    75% { transform: translateX(5px); }
+  }
+  
+  .animate-vault-open { animation: vault-open 2s ease-out forwards; }
+  .animate-coin-fall { animation: coin-fall 3s ease-in-out infinite; }
+  .animate-pulse-gold { animation: pulse-gold 2s ease-in-out infinite; }
+  .animate-shake { animation: shake 0.5s ease-in-out; }
 }
