@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { CheckCircle, XCircle, Users, ShoppingCart, TrendingUp, Megaphone } from "lucide-react";
+import { CheckCircle, XCircle, Users, ShoppingCart, TrendingUp, Megaphone, Coins } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 export const DashboardAdmin = () => {
@@ -16,6 +16,10 @@ export const DashboardAdmin = () => {
     title: "",
     message: "",
     priority: "normal"
+  });
+  const [coinForm, setCoinForm] = useState({
+    email: "",
+    amount: ""
   });
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -91,6 +95,40 @@ export const DashboardAdmin = () => {
     }
   };
 
+  const handleGiveCoins = async () => {
+    if (!coinForm.email || !coinForm.amount) {
+      toast.error("Please fill in all fields");
+      return;
+    }
+
+    const adminEmail = localStorage.getItem("vaultfut_email");
+    if (!adminEmail) {
+      toast.error("Admin email not found");
+      return;
+    }
+
+    try {
+      const { data, error } = await supabase.rpc('add_coins', {
+        _user_id: crypto.randomUUID(), // We'll need to find user by email
+        _amount: parseInt(coinForm.amount),
+        _transaction_type: 'admin_gift',
+        _description: `Admin gift from ${adminEmail}`
+      });
+
+      if (error) throw error;
+
+      if (data) {
+        toast.success(`Successfully gave ${coinForm.amount} coins to ${coinForm.email}`);
+        setCoinForm({ email: "", amount: "" });
+      } else {
+        toast.error("Access denied - admin rights required");
+      }
+    } catch (error) {
+      console.error('Error giving coins:', error);
+      toast.error('Failed to give coins');
+    }
+  };
+
   const handleOrderAction = async (orderId: string, action: 'approve' | 'decline', reason?: string) => {
     try {
       const newStatus = action === 'approve' ? 'completed' : 'declined';
@@ -122,7 +160,7 @@ export const DashboardAdmin = () => {
       </div>
 
       <Tabs defaultValue="orders" className="w-full">
-        <TabsList className="grid w-full grid-cols-3 bg-card/80 backdrop-blur-sm">
+        <TabsList className="grid w-full grid-cols-4 bg-card/80 backdrop-blur-sm">
           <TabsTrigger value="orders" className="flex items-center space-x-2">
             <ShoppingCart className="w-4 h-4" />
             <span>Orders</span>
@@ -130,6 +168,10 @@ export const DashboardAdmin = () => {
           <TabsTrigger value="broadcasts" className="flex items-center space-x-2">
             <Megaphone className="w-4 h-4" />
             <span>Broadcasts</span>
+          </TabsTrigger>
+          <TabsTrigger value="coins" className="flex items-center space-x-2">
+            <Coins className="w-4 h-4" />
+            <span>Give Coins</span>
           </TabsTrigger>
           <TabsTrigger value="analytics" className="flex items-center space-x-2">
             <TrendingUp className="w-4 h-4" />
@@ -274,6 +316,45 @@ export const DashboardAdmin = () => {
               <Button onClick={handleSendBroadcast} className="vault-button w-full">
                 <Megaphone className="w-4 h-4 mr-2" />
                 Send Broadcast to All Users
+              </Button>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Give Coins */}
+        <TabsContent value="coins" className="space-y-6">
+          <Card className="vault-card">
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <Coins className="w-5 h-5" />
+                <span>Give Coins to User</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <Label>User Email</Label>
+                <Input
+                  value={coinForm.email}
+                  onChange={(e) => setCoinForm(prev => ({...prev, email: e.target.value}))}
+                  placeholder="user@example.com"
+                  className="vault-input"
+                />
+              </div>
+
+              <div>
+                <Label>Amount of Coins</Label>
+                <Input
+                  type="number"
+                  value={coinForm.amount}
+                  onChange={(e) => setCoinForm(prev => ({...prev, amount: e.target.value}))}
+                  placeholder="1000"
+                  className="vault-input"
+                />
+              </div>
+
+              <Button onClick={handleGiveCoins} className="vault-button w-full">
+                <Coins className="w-4 h-4 mr-2" />
+                Give Coins to User
               </Button>
             </CardContent>
           </Card>

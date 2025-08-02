@@ -34,6 +34,7 @@ export const FullScreenBroadcast = () => {
         };
         const lastShownId = localStorage.getItem('last_broadcast_shown');
         
+        // Show broadcast to everyone including admin
         if (broadcast.id !== lastShownId) {
           setCurrentBroadcast(broadcast);
           localStorage.setItem('last_broadcast_shown', broadcast.id);
