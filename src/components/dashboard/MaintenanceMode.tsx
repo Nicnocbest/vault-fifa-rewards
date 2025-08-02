@@ -28,14 +28,16 @@ export const MaintenanceMode = () => {
 
     checkMaintenance();
 
-    // Listen for real-time maintenance updates
+    // Listen for real-time maintenance updates - INSTANT kick out!
     const channel = supabase
-      .channel('maintenance_updates')
+      .channel('maintenance_realtime')
       .on('postgres_changes', {
-        event: '*',
+        event: 'UPDATE',
         schema: 'public',
         table: 'maintenance_mode'
-      }, () => {
+      }, (payload) => {
+        // INSTANT response to maintenance changes!
+        console.log('MAINTENANCE MODE CHANGED!', payload);
         checkMaintenance();
       })
       .subscribe();

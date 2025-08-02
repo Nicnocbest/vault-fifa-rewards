@@ -57,14 +57,16 @@ export const FullScreenBroadcast = () => {
 
     checkBroadcasts();
 
-    // Listen for real-time broadcast updates
+    // Listen for real-time broadcast updates - INSTANT kick out!
     const channel = supabase
-      .channel('broadcasts')
+      .channel('broadcast_updates')
       .on('postgres_changes', {
         event: 'INSERT',
         schema: 'public',
         table: 'broadcasts'
-      }, () => {
+      }, (payload) => {
+        // INSTANT response to new broadcasts!
+        console.log('NEW BROADCAST DETECTED!', payload);
         checkBroadcasts();
       })
       .subscribe();
