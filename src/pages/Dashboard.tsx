@@ -8,6 +8,7 @@ import { DashboardMessages } from "@/components/dashboard/DashboardMessages";
 import { DashboardAchievements } from "@/components/dashboard/DashboardAchievements";
 import { DashboardAdmin } from "@/components/dashboard/DashboardAdmin";
 import { BroadcastAlert } from "@/components/dashboard/BroadcastAlert";
+import { FullScreenBroadcast } from "@/components/dashboard/FullScreenBroadcast";
 
 const Dashboard = () => {
   const [userEmail] = useState(() => localStorage.getItem("vaultfut_email") || "");
@@ -16,6 +17,9 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      {/* Full Screen Broadcast */}
+      <FullScreenBroadcast />
+      
       {/* Broadcast Alert */}
       <BroadcastAlert />
       

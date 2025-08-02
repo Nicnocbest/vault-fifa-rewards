@@ -21,6 +21,17 @@ const Landing = () => {
       return;
     }
 
+    // More strict email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      toast({
+        title: "Invalid Email",
+        description: "Please enter a valid email address.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     // Store email in localStorage for now
     localStorage.setItem("vaultfut_email", email);
     

@@ -1,13 +1,15 @@
-import { useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { useState, useEffect } from "react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Megaphone, Package, Calendar, BarChart3, CheckCircle, XCircle } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
+import { CheckCircle, XCircle, Users, ShoppingCart, TrendingUp, Megaphone } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 export const DashboardAdmin = () => {
   const [broadcastForm, setBroadcastForm] = useState({
@@ -15,297 +17,291 @@ export const DashboardAdmin = () => {
     message: "",
     priority: "normal"
   });
-  const { toast } = useToast();
+  const [orders, setOrders] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState({
+    totalUsers: 0,
+    ordersToday: 0,
+    successRate: 89
+  });
 
-  const orders = [
-    {
-      id: 1,
-      user: "player123@email.com",
-      package: "10K Coins",
-      amount: 10000,
-      status: "pending",
-      playerName: "FUT_Master",
-      rating: 85,
-      buyNowPrice: 5001,
-      timestamp: "2 hours ago"
-    },
-    {
-      id: 2,
-      user: "gamer456@email.com", 
-      package: "50K Coins",
-      amount: 50000,
-      status: "completed",
-      playerName: "ProPlayer99",
-      rating: 87,
-      buyNowPrice: 12500,
-      timestamp: "1 day ago"
+  useEffect(() => {
+    fetchOrders();
+    fetchStats();
+  }, []);
+
+  const fetchOrders = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('orders')
+        .select('*')
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      setOrders(data || []);
+    } catch (error) {
+      console.error('Error fetching orders:', error);
+      toast.error('Failed to load orders');
+    } finally {
+      setLoading(false);
     }
-  ];
+  };
 
-  const events = [
-    {
-      id: 1,
-      name: "Double Coins Weekend",
-      type: "coin_multiplier",
-      multiplier: 2.0,
-      active: true,
-      startTime: "2024-01-20T00:00:00Z",
-      endTime: "2024-01-22T23:59:59Z"
-    },
-    {
-      id: 2,
-      name: "Winter Special",
-      type: "theme_event",
-      multiplier: 1.0,
-      active: false,
-      startTime: "2024-12-01T00:00:00Z",
-      endTime: "2024-12-31T23:59:59Z"
+  const fetchStats = async () => {
+    try {
+      // Get orders count for today
+      const today = new Date().toISOString().split('T')[0];
+      const { data: todayOrders } = await supabase
+        .from('orders')
+        .select('id')
+        .gte('created_at', today);
+
+      setStats(prev => ({
+        ...prev,
+        ordersToday: todayOrders?.length || 0
+      }));
+    } catch (error) {
+      console.error('Error fetching stats:', error);
     }
-  ];
+  };
 
-  const handleSendBroadcast = () => {
+  const handleSendBroadcast = async () => {
     if (!broadcastForm.title || !broadcastForm.message) {
-      toast({
-        title: "Missing Information",
-        description: "Please fill in title and message.",
-        variant: "destructive",
-      });
+      toast.error("Please fill in all fields");
       return;
     }
 
-    toast({
-      title: "Broadcast Sent! 📢",
-      description: `${broadcastForm.priority.toUpperCase()} priority message sent to all users.`,
-    });
+    try {
+      const { error } = await supabase
+        .from('broadcasts')
+        .insert({
+          title: broadcastForm.title,
+          message: broadcastForm.message,
+          type: broadcastForm.priority,
+          is_active: true
+        });
 
-    setBroadcastForm({ title: "", message: "", priority: "normal" });
+      if (error) throw error;
+
+      toast.success("Broadcast sent to all users!");
+      setBroadcastForm({ title: "", message: "", priority: "normal" });
+    } catch (error) {
+      console.error('Error sending broadcast:', error);
+      toast.error('Failed to send broadcast');
+    }
   };
 
-  const handleOrderAction = (orderId: number, action: string) => {
-    toast({
-      title: `Order ${action}`,
-      description: `Order #${orderId} has been ${action.toLowerCase()}.`,
-    });
-  };
+  const handleOrderAction = async (orderId: string, action: 'approve' | 'decline', reason?: string) => {
+    try {
+      const newStatus = action === 'approve' ? 'completed' : 'declined';
+      const { error } = await supabase
+        .from('orders')
+        .update({ 
+          status: newStatus,
+          declined_reason: reason || null
+        })
+        .eq('id', orderId);
 
-  const handleEventToggle = (eventId: number) => {
-    toast({
-      title: "Event Updated",
-      description: `Event #${eventId} status has been toggled.`,
-    });
+      if (error) throw error;
+
+      await fetchOrders();
+      toast.success(`Order ${action}d successfully`);
+    } catch (error) {
+      console.error(`Error ${action}ing order:`, error);
+      toast.error(`Failed to ${action} order`);
+    }
   };
 
   return (
     <div className="space-y-6">
       <div className="vault-card">
-        <h2 className="text-3xl font-bold mb-2 text-destructive">Admin Panel</h2>
+        <h2 className="text-3xl font-bold mb-2 text-destructive font-vault">Admin Control Center</h2>
         <p className="text-muted-foreground">
-          Manage broadcasts, orders, events, and monitor system activity
+          Manage broadcasts, orders, and monitor system activity
         </p>
       </div>
 
       <Tabs defaultValue="orders" className="w-full">
-        <TabsList className="grid w-full grid-cols-4 bg-card/80 backdrop-blur-sm">
-          <TabsTrigger value="orders">Orders</TabsTrigger>
-          <TabsTrigger value="broadcasts">Broadcasts</TabsTrigger>
-          <TabsTrigger value="events">Events</TabsTrigger>
-          <TabsTrigger value="analytics">Analytics</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-3 bg-card/80 backdrop-blur-sm">
+          <TabsTrigger value="orders" className="flex items-center space-x-2">
+            <ShoppingCart className="w-4 h-4" />
+            <span>Orders</span>
+          </TabsTrigger>
+          <TabsTrigger value="broadcasts" className="flex items-center space-x-2">
+            <Megaphone className="w-4 h-4" />
+            <span>Broadcasts</span>
+          </TabsTrigger>
+          <TabsTrigger value="analytics" className="flex items-center space-x-2">
+            <TrendingUp className="w-4 h-4" />
+            <span>Analytics</span>
+          </TabsTrigger>
         </TabsList>
 
         {/* Orders Management */}
-        <TabsContent value="orders">
-          <Card className="vault-card">
-            <CardHeader>
-              <CardTitle className="flex items-center space-x-2">
-                <Package className="w-5 h-5" />
-                <span>Order Management</span>
-              </CardTitle>
-              <CardDescription>
-                Review and process user orders
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {orders.map((order) => (
-                  <Card key={order.id} className="vault-card">
-                    <CardContent className="pt-6">
-                      <div className="flex justify-between items-start mb-4">
-                        <div>
-                          <h4 className="font-semibold">Order #{order.id}</h4>
-                          <p className="text-sm text-muted-foreground">{order.user}</p>
+        <TabsContent value="orders" className="space-y-6">
+          {loading ? (
+            <Card className="vault-card">
+              <CardContent className="p-6 text-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+                <p className="mt-2 text-muted-foreground">Loading orders...</p>
+              </CardContent>
+            </Card>
+          ) : orders.length === 0 ? (
+            <Card className="vault-card">
+              <CardContent className="p-6 text-center">
+                <ShoppingCart className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                <p className="text-muted-foreground">No orders yet</p>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="space-y-4">
+              {orders.map((order) => (
+                <Card key={order.id} className="vault-card border-primary/20">
+                  <CardContent className="p-6">
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-2">
+                        <div className="flex items-center space-x-4">
+                          <Badge variant={
+                            order.status === 'completed' ? 'default' : 
+                            order.status === 'pending' ? 'secondary' : 'destructive'
+                          }>
+                            {order.status}
+                          </Badge>
+                          <span className="font-vault text-sm text-muted-foreground">
+                            {new Date(order.created_at).toLocaleDateString()}
+                          </span>
                         </div>
-                        <Badge variant={order.status === 'completed' ? 'secondary' : 'outline'}>
-                          {order.status}
-                        </Badge>
+                        <div className="grid grid-cols-2 gap-4 text-sm">
+                          <div>
+                            <span className="text-muted-foreground">User:</span>
+                            <span className="ml-2 font-medium">{order.email}</span>
+                          </div>
+                          <div>
+                            <span className="text-muted-foreground">Coins:</span>
+                            <span className="ml-2 font-medium">{order.coins_used} → {order.fifa_coins_received} FIFA</span>
+                          </div>
+                          {order.player_name && (
+                            <div>
+                              <span className="text-muted-foreground">Player:</span>
+                              <span className="ml-2 font-medium">{order.player_name}</span>
+                            </div>
+                          )}
+                          {order.declined_reason && (
+                            <div className="col-span-2">
+                              <span className="text-muted-foreground">Admin Note:</span>
+                              <span className="ml-2 font-medium text-red-400">{order.declined_reason}</span>
+                            </div>
+                          )}
+                        </div>
                       </div>
-                      
-                      <div className="grid grid-cols-2 gap-4 mb-4">
-                        <div>
-                          <p className="text-sm font-medium">Package: {order.package}</p>
-                          <p className="text-sm">Player: {order.playerName}</p>
-                          <p className="text-sm">Rating: {order.rating}</p>
-                        </div>
-                        <div>
-                          <p className="text-sm">Buy Now: {order.buyNowPrice}</p>
-                          <p className="text-sm">Amount: {order.amount.toLocaleString()} coins</p>
-                          <p className="text-sm text-muted-foreground">{order.timestamp}</p>
-                        </div>
-                      </div>
-
                       {order.status === 'pending' && (
                         <div className="flex space-x-2">
                           <Button 
-                            onClick={() => handleOrderAction(order.id, 'Approved')}
-                            className="flex items-center space-x-1"
-                            variant="secondary"
+                            size="sm" 
+                            className="bg-green-600 hover:bg-green-700"
+                            onClick={() => handleOrderAction(order.id, 'approve')}
                           >
-                            <CheckCircle className="w-4 h-4" />
-                            <span>Approve</span>
+                            <CheckCircle className="w-4 h-4 mr-1" />
+                            Approve
                           </Button>
                           <Button 
-                            onClick={() => handleOrderAction(order.id, 'Declined')}
+                            size="sm" 
                             variant="destructive"
-                            className="flex items-center space-x-1"
+                            onClick={() => {
+                              const reason = prompt('Reason for decline:');
+                              if (reason) handleOrderAction(order.id, 'decline', reason);
+                            }}
                           >
-                            <XCircle className="w-4 h-4" />
-                            <span>Decline</span>
+                            <XCircle className="w-4 h-4 mr-1" />
+                            Decline
                           </Button>
                         </div>
                       )}
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
         </TabsContent>
 
-        {/* Broadcast Management */}
-        <TabsContent value="broadcasts">
+        {/* Broadcasts */}
+        <TabsContent value="broadcasts" className="space-y-6">
           <Card className="vault-card">
             <CardHeader>
               <CardTitle className="flex items-center space-x-2">
                 <Megaphone className="w-5 h-5" />
                 <span>Send Broadcast</span>
               </CardTitle>
-              <CardDescription>
-                Send announcements to all users
-              </CardDescription>
             </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div>
-                  <label className="text-sm font-medium">Priority Level</label>
-                  <Select value={broadcastForm.priority} onValueChange={(value) => 
-                    setBroadcastForm(prev => ({...prev, priority: value}))
-                  }>
-                    <SelectTrigger className="vault-input">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="low">Low - Info Only</SelectItem>
-                      <SelectItem value="normal">Normal - Standard</SelectItem>
-                      <SelectItem value="critical">Critical - Emergency</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div>
-                  <label className="text-sm font-medium">Title</label>
-                  <Input
-                    value={broadcastForm.title}
-                    onChange={(e) => setBroadcastForm(prev => ({...prev, title: e.target.value}))}
-                    placeholder="Broadcast title..."
-                    className="vault-input"
-                  />
-                </div>
-
-                <div>
-                  <label className="text-sm font-medium">Message</label>
-                  <Textarea
-                    value={broadcastForm.message}
-                    onChange={(e) => setBroadcastForm(prev => ({...prev, message: e.target.value}))}
-                    placeholder="Broadcast message..."
-                    className="vault-input min-h-[100px]"
-                  />
-                </div>
-
-                <Button onClick={handleSendBroadcast} className="vault-button">
-                  Send Broadcast
-                </Button>
+            <CardContent className="space-y-4">
+              <div>
+                <Label>Priority Level</Label>
+                <Select value={broadcastForm.priority} onValueChange={(value) => 
+                  setBroadcastForm(prev => ({...prev, priority: value}))
+                }>
+                  <SelectTrigger className="vault-input">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="low">Low - Info Only ℹ️</SelectItem>
+                    <SelectItem value="normal">Normal - Standard ⚠️</SelectItem>
+                    <SelectItem value="critical">Critical - Emergency 🚨</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
 
-        {/* Events Management */}
-        <TabsContent value="events">
-          <Card className="vault-card">
-            <CardHeader>
-              <CardTitle className="flex items-center space-x-2">
-                <Calendar className="w-5 h-5" />
-                <span>Events Management</span>
-              </CardTitle>
-              <CardDescription>
-                Control active events and multipliers
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {events.map((event) => (
-                  <Card key={event.id} className="vault-card">
-                    <CardContent className="pt-6">
-                      <div className="flex justify-between items-center">
-                        <div>
-                          <h4 className="font-semibold">{event.name}</h4>
-                          <p className="text-sm text-muted-foreground">
-                            {event.type} • {event.multiplier}x multiplier
-                          </p>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <Badge variant={event.active ? 'secondary' : 'outline'}>
-                            {event.active ? 'Active' : 'Inactive'}
-                          </Badge>
-                          <Button
-                            onClick={() => handleEventToggle(event.id)}
-                            variant="outline"
-                            size="sm"
-                          >
-                            {event.active ? 'Deactivate' : 'Activate'}
-                          </Button>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
+              <div>
+                <Label>Title</Label>
+                <Input
+                  value={broadcastForm.title}
+                  onChange={(e) => setBroadcastForm(prev => ({...prev, title: e.target.value}))}
+                  placeholder="Broadcast title..."
+                  className="vault-input"
+                />
               </div>
+
+              <div>
+                <Label>Message</Label>
+                <Textarea
+                  value={broadcastForm.message}
+                  onChange={(e) => setBroadcastForm(prev => ({...prev, message: e.target.value}))}
+                  placeholder="Broadcast message..."
+                  className="vault-input min-h-[100px]"
+                />
+              </div>
+
+              <Button onClick={handleSendBroadcast} className="vault-button w-full">
+                <Megaphone className="w-4 h-4 mr-2" />
+                Send Broadcast to All Users
+              </Button>
             </CardContent>
           </Card>
         </TabsContent>
 
         {/* Analytics */}
-        <TabsContent value="analytics">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <TabsContent value="analytics" className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <Card className="vault-card">
-              <CardContent className="pt-6">
-                <BarChart3 className="w-8 h-8 mb-2 text-primary" />
-                <div className="text-2xl font-bold">1,234</div>
+              <CardContent className="p-6 text-center">
+                <Users className="w-12 h-12 text-primary mx-auto mb-4" />
+                <div className="text-3xl font-bold text-primary">{stats.totalUsers}</div>
                 <div className="text-sm text-muted-foreground">Total Users</div>
               </CardContent>
             </Card>
             
             <Card className="vault-card">
-              <CardContent className="pt-6">
-                <Package className="w-8 h-8 mb-2 text-secondary" />
-                <div className="text-2xl font-bold">56</div>
+              <CardContent className="p-6 text-center">
+                <ShoppingCart className="w-12 h-12 text-secondary mx-auto mb-4" />
+                <div className="text-3xl font-bold text-secondary">{stats.ordersToday}</div>
                 <div className="text-sm text-muted-foreground">Orders Today</div>
               </CardContent>
             </Card>
             
             <Card className="vault-card">
-              <CardContent className="pt-6">
-                <Megaphone className="w-8 h-8 mb-2 text-accent" />
-                <div className="text-2xl font-bold">89%</div>
+              <CardContent className="p-6 text-center">
+                <TrendingUp className="w-12 h-12 text-accent mx-auto mb-4" />
+                <div className="text-3xl font-bold text-accent">{stats.successRate}%</div>
                 <div className="text-sm text-muted-foreground">Success Rate</div>
               </CardContent>
             </Card>

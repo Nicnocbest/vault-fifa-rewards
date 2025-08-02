@@ -1,196 +1,239 @@
 import { useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Coins, Star, Zap } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
+import { Coins, Star, Zap, Crown } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 export const DashboardShop = () => {
-  const [selectedPackage, setSelectedPackage] = useState<string | null>(null);
   const [orderForm, setOrderForm] = useState({
     playerName: "",
-    rating: "",
-    buyNowPrice: "",
-    specialInstructions: ""
+    rating: ""
   });
-  const { toast } = useToast();
 
   const packages = [
-    { id: "5k", coins: 5000, price: "€5", popular: false },
-    { id: "10k", coins: 10000, price: "€9", popular: true },
-    { id: "50k", coins: 50000, price: "€39", popular: false },
-    { id: "100k", coins: 100000, price: "€75", popular: false },
-    { id: "custom", coins: 0, price: "Custom", popular: false }
+    {
+      id: 1,
+      name: "Starter Pack",
+      websiteCoins: 2500,
+      fifaCoins: 5000,
+      icon: Coins,
+      color: "from-blue-500 to-blue-600",
+      hint: "Set Buy Now Price: 5,001"
+    },
+    {
+      id: 2,
+      name: "Pro Pack",
+      websiteCoins: 5000,
+      fifaCoins: 10000,
+      icon: Star,
+      color: "from-purple-500 to-purple-600",
+      hint: "Set Buy Now Price: 10,001",
+      popular: true
+    },
+    {
+      id: 3,
+      name: "Elite Pack",
+      websiteCoins: 25000,
+      fifaCoins: 50000,
+      icon: Zap,
+      color: "from-orange-500 to-orange-600",
+      hint: "Set Buy Now Price: 50,001"
+    },
+    {
+      id: 4,
+      name: "Legend Pack",
+      websiteCoins: 50000,
+      fifaCoins: 100000,
+      icon: Crown,
+      color: "from-yellow-500 to-yellow-600",
+      hint: "Set Buy Now Price: 100,001"
+    }
   ];
 
-  const handlePackageSelect = (packageId: string) => {
-    setSelectedPackage(packageId);
-  };
-
-  const handleOrderSubmit = () => {
-    if (!selectedPackage) {
-      toast({
-        title: "Select Package",
-        description: "Please select a coin package first.",
-        variant: "destructive",
-      });
-      return;
-    }
-
+  const handlePurchase = async (packageName: string, websiteCoins: number, fifaCoins: number, hint: string) => {
     if (!orderForm.playerName || !orderForm.rating) {
-      toast({
-        title: "Missing Information",
-        description: "Please fill in player name and rating.",
-        variant: "destructive",
-      });
+      toast.error("Please fill in all player details");
       return;
     }
 
-    toast({
-      title: "Order Submitted! ✅",
-      description: "Your order has been sent for admin approval.",
-    });
+    const userEmail = localStorage.getItem("vaultfut_email");
+    if (!userEmail) {
+      toast.error("Please refresh the page and enter your email");
+      return;
+    }
 
-    // Reset form
-    setSelectedPackage(null);
-    setOrderForm({
-      playerName: "",
-      rating: "",
-      buyNowPrice: "",
-      specialInstructions: ""
-    });
+    try {
+      const { error } = await supabase
+        .from('orders')
+        .insert({
+          user_id: crypto.randomUUID(),
+          email: userEmail,
+          fifa_id: orderForm.playerName,
+          player_name: orderForm.playerName,
+          coins_used: websiteCoins,
+          fifa_coins_received: fifaCoins,
+          status: 'pending'
+        });
+
+      if (error) throw error;
+
+      toast.success(`Order placed for ${packageName}! Admin will process it soon.`);
+      setOrderForm({ playerName: "", rating: "" });
+    } catch (error) {
+      console.error('Error creating order:', error);
+      toast.error('Failed to place order. Please try again.');
+    }
   };
 
   return (
-    <div className="space-y-6">
-      <div className="vault-card">
-        <h2 className="text-3xl font-bold mb-2">Coin Shop</h2>
-        <p className="text-muted-foreground">
-          Purchase FIFA Ultimate Team coins with secure delivery
+    <div className="space-y-8">
+      <div className="vault-card text-center">
+        <h2 className="text-4xl font-bold mb-4 bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent font-vault">
+          Coin Exchange
+        </h2>
+        <p className="text-muted-foreground text-lg">
+          Convert your website coins to FIFA Ultimate Team coins
         </p>
+        <div className="mt-4 p-4 bg-primary/10 rounded-lg border border-primary/30">
+          <p className="text-primary font-bold">
+            💰 Exchange Rate: 1 Website Coin = 2 FIFA Coins
+          </p>
+        </div>
       </div>
+
+      {/* Player Details Form */}
+      <Card className="vault-card">
+        <CardHeader>
+          <CardTitle className="flex items-center space-x-2">
+            <Star className="w-5 h-5 text-primary" />
+            <span>Player Information</span>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="playerName">FIFA Player Name *</Label>
+              <Input
+                id="playerName"
+                value={orderForm.playerName}
+                onChange={(e) => setOrderForm(prev => ({...prev, playerName: e.target.value}))}
+                placeholder="Your FIFA Ultimate Team name"
+                className="vault-input"
+              />
+            </div>
+            <div>
+              <Label htmlFor="rating">Player Rating *</Label>
+              <Input
+                id="rating"
+                value={orderForm.rating}
+                onChange={(e) => setOrderForm(prev => ({...prev, rating: e.target.value}))}
+                placeholder="e.g. 85"
+                className="vault-input"
+              />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Package Selection */}
       <div>
-        <h3 className="text-xl font-semibold mb-4">Select Package</h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
-          {packages.map((pkg) => (
-            <Card 
-              key={pkg.id}
-              className={`vault-card cursor-pointer transition-all ${
-                selectedPackage === pkg.id 
-                  ? 'ring-2 ring-primary border-primary bg-primary/10' 
-                  : 'hover:border-primary/50'
-              }`}
-              onClick={() => handlePackageSelect(pkg.id)}
-            >
-              <CardHeader className="text-center pb-2">
+        <h3 className="text-2xl font-bold mb-6 text-center font-vault">Select Your Package</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {packages.map((pkg) => {
+            const Icon = pkg.icon;
+            return (
+              <Card 
+                key={pkg.id}
+                className="vault-card hover:scale-105 transition-transform cursor-pointer relative overflow-hidden group"
+              >
                 {pkg.popular && (
-                  <Badge className="mb-2 bg-secondary text-secondary-foreground">
-                    <Star className="w-3 h-3 mr-1" />
-                    Popular
-                  </Badge>
+                  <div className="absolute top-4 right-4 z-10">
+                    <Badge className="bg-accent text-accent-foreground animate-pulse">
+                      ⭐ Popular
+                    </Badge>
+                  </div>
                 )}
-                <CardTitle className="flex items-center justify-center space-x-2">
-                  <Coins className="w-5 h-5 text-primary" />
-                  <span>
-                    {pkg.id === "custom" ? "Custom" : `${pkg.coins.toLocaleString()}`}
-                  </span>
-                </CardTitle>
-                <CardDescription className="text-lg font-bold text-primary">
-                  {pkg.price}
-                </CardDescription>
-              </CardHeader>
-            </Card>
-          ))}
+                
+                <div className={`absolute inset-0 bg-gradient-to-br ${pkg.color} opacity-10 group-hover:opacity-20 transition-opacity`} />
+                
+                <CardHeader className="text-center relative z-10">
+                  <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center">
+                    <Icon className="w-8 h-8 text-white" />
+                  </div>
+                  <CardTitle className="text-xl font-vault">{pkg.name}</CardTitle>
+                </CardHeader>
+                
+                <CardContent className="text-center space-y-4 relative z-10">
+                  <div className="space-y-2">
+                    <div className="text-2xl font-bold text-primary">
+                      {pkg.websiteCoins.toLocaleString()}
+                    </div>
+                    <div className="text-sm text-muted-foreground">Website Coins</div>
+                    
+                    <div className="text-center py-2">
+                      <div className="text-accent">↓</div>
+                      <div className="text-xs text-muted-foreground">converts to</div>
+                    </div>
+                    
+                    <div className="text-3xl font-bold text-accent">
+                      {pkg.fifaCoins.toLocaleString()}
+                    </div>
+                    <div className="text-sm text-muted-foreground">FIFA Coins</div>
+                  </div>
+                  
+                  <div className="p-3 bg-accent/10 rounded-lg border border-accent/30">
+                    <p className="text-xs text-accent font-medium">{pkg.hint}</p>
+                  </div>
+                  
+                  <Button 
+                    className="w-full bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 text-primary-foreground font-vault font-bold"
+                    onClick={() => handlePurchase(pkg.name, pkg.websiteCoins, pkg.fifaCoins, pkg.hint)}
+                    disabled={!orderForm.playerName || !orderForm.rating}
+                  >
+                    Order Now
+                  </Button>
+                </CardContent>
+              </Card>
+            );
+          })}
         </div>
       </div>
 
-      {/* Order Form */}
-      {selectedPackage && (
-        <div className="vault-card">
-          <h3 className="text-xl font-semibold mb-4 flex items-center space-x-2">
-            <Zap className="w-5 h-5 text-primary" />
-            <span>Order Details</span>
-          </h3>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="playerName">FIFA Player Name *</Label>
-                <Input
-                  id="playerName"
-                  value={orderForm.playerName}
-                  onChange={(e) => setOrderForm(prev => ({...prev, playerName: e.target.value}))}
-                  placeholder="Your FIFA Ultimate Team name"
-                  className="vault-input"
-                />
+      {/* Instructions */}
+      <Card className="vault-card">
+        <CardHeader>
+          <CardTitle className="text-center">📋 How It Works</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
+            <div className="space-y-2">
+              <div className="w-12 h-12 bg-primary/20 rounded-full flex items-center justify-center mx-auto">
+                <span className="text-xl font-bold text-primary">1</span>
               </div>
-              
-              <div>
-                <Label htmlFor="rating">Player Rating *</Label>
-                <Input
-                  id="rating"
-                  value={orderForm.rating}
-                  onChange={(e) => setOrderForm(prev => ({...prev, rating: e.target.value}))}
-                  placeholder="e.g. 85"
-                  className="vault-input"
-                />
-              </div>
-              
-              <div>
-                <Label htmlFor="buyNowPrice">Buy Now Price</Label>
-                <Input
-                  id="buyNowPrice"
-                  value={orderForm.buyNowPrice}
-                  onChange={(e) => setOrderForm(prev => ({...prev, buyNowPrice: e.target.value}))}
-                  placeholder="e.g. 5001"
-                  className="vault-input"
-                />
-                <p className="text-xs text-muted-foreground mt-1">
-                  Set your player's buy now price (recommended: unique amount like 5001)
-                </p>
-              </div>
+              <h4 className="font-semibold">Fill Player Info</h4>
+              <p className="text-sm text-muted-foreground">Enter your FIFA player name and rating</p>
             </div>
-
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="instructions">Special Instructions</Label>
-                <Textarea
-                  id="instructions"
-                  value={orderForm.specialInstructions}
-                  onChange={(e) => setOrderForm(prev => ({...prev, specialInstructions: e.target.value}))}
-                  placeholder="Any additional details or requirements..."
-                  className="vault-input min-h-[100px]"
-                />
+            <div className="space-y-2">
+              <div className="w-12 h-12 bg-primary/20 rounded-full flex items-center justify-center mx-auto">
+                <span className="text-xl font-bold text-primary">2</span>
               </div>
-
-              <div className="vault-card bg-primary/10 border-primary/30">
-                <h4 className="font-semibold text-primary mb-2">💡 Quick Tips</h4>
-                <ul className="text-sm text-muted-foreground space-y-1">
-                  <li>• Use a unique buy now price</li>
-                  <li>• Keep your player listed</li>
-                  <li>• Delivery within 24 hours</li>
-                  <li>• Contact support if needed</li>
-                </ul>
+              <h4 className="font-semibold">Set Buy Now Price</h4>
+              <p className="text-sm text-muted-foreground">List your player with the specified unique price</p>
+            </div>
+            <div className="space-y-2">
+              <div className="w-12 h-12 bg-primary/20 rounded-full flex items-center justify-center mx-auto">
+                <span className="text-xl font-bold text-primary">3</span>
               </div>
+              <h4 className="font-semibold">Get Your Coins</h4>
+              <p className="text-sm text-muted-foreground">Admin will purchase your player and you receive coins</p>
             </div>
           </div>
-
-          <div className="mt-6 pt-6 border-t border-border">
-            <Button 
-              onClick={handleOrderSubmit}
-              className="vault-button w-full md:w-auto"
-              size="lg"
-            >
-              Submit Order
-            </Button>
-          </div>
-        </div>
-      )}
+        </CardContent>
+      </Card>
     </div>
   );
 };
