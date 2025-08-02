@@ -9,6 +9,7 @@ import { DashboardAchievements } from "@/components/dashboard/DashboardAchieveme
 import { DashboardAdmin } from "@/components/dashboard/DashboardAdmin";
 import { BroadcastAlert } from "@/components/dashboard/BroadcastAlert";
 import { FullScreenBroadcast } from "@/components/dashboard/FullScreenBroadcast";
+import { MaintenanceMode } from "@/components/dashboard/MaintenanceMode";
 
 const Dashboard = () => {
   const [userEmail] = useState(() => localStorage.getItem("vaultfut_email") || "");
@@ -17,6 +18,9 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      {/* Maintenance Mode - Highest Priority */}
+      <MaintenanceMode />
+      
       {/* Full Screen Broadcast */}
       <FullScreenBroadcast />
       

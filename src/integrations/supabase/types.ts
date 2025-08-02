@@ -387,6 +387,33 @@ export type Database = {
           },
         ]
       }
+      maintenance_mode: {
+        Row: {
+          created_at: string | null
+          expected_downtime: string | null
+          id: string
+          is_active: boolean | null
+          message: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          expected_downtime?: string | null
+          id?: string
+          is_active?: boolean | null
+          message?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          expected_downtime?: string | null
+          id?: string
+          is_active?: boolean | null
+          message?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       messages: {
         Row: {
           content: string
@@ -730,6 +757,10 @@ export type Database = {
           _user_id: string
           _role: Database["public"]["Enums"]["app_role"]
         }
+        Returns: boolean
+      }
+      simple_give_coins: {
+        Args: { target_email: string; coin_amount: number }
         Returns: boolean
       }
     }

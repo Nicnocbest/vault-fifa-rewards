@@ -21,6 +21,11 @@ export const DashboardAdmin = () => {
     email: "",
     amount: ""
   });
+  const [maintenanceForm, setMaintenanceForm] = useState({
+    message: "MAINTENANCE BREAK",
+    downtime: "30 minutes",
+    isActive: false
+  });
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({
@@ -108,11 +113,9 @@ export const DashboardAdmin = () => {
     }
 
     try {
-      const { data, error } = await supabase.rpc('add_coins', {
-        _user_id: crypto.randomUUID(), // We'll need to find user by email
-        _amount: parseInt(coinForm.amount),
-        _transaction_type: 'admin_gift',
-        _description: `Admin gift from ${adminEmail}`
+      const { data, error } = await supabase.rpc('simple_give_coins', {
+        target_email: coinForm.email,
+        coin_amount: parseInt(coinForm.amount)
       });
 
       if (error) throw error;
@@ -126,6 +129,27 @@ export const DashboardAdmin = () => {
     } catch (error) {
       console.error('Error giving coins:', error);
       toast.error('Failed to give coins');
+    }
+  };
+
+  const handleMaintenanceToggle = async () => {
+    try {
+      const { error } = await supabase
+        .from('maintenance_mode')
+        .update({
+          is_active: maintenanceForm.isActive,
+          message: maintenanceForm.message,
+          expected_downtime: maintenanceForm.downtime,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', (await supabase.from('maintenance_mode').select('id').limit(1).single()).data?.id);
+
+      if (error) throw error;
+
+      toast.success(maintenanceForm.isActive ? "Maintenance mode activated!" : "Maintenance mode deactivated!");
+    } catch (error) {
+      console.error('Error toggling maintenance:', error);
+      toast.error('Failed to update maintenance mode');
     }
   };
 
@@ -160,7 +184,7 @@ export const DashboardAdmin = () => {
       </div>
 
       <Tabs defaultValue="orders" className="w-full">
-        <TabsList className="grid w-full grid-cols-4 bg-card/80 backdrop-blur-sm">
+        <TabsList className="grid w-full grid-cols-5 bg-card/80 backdrop-blur-sm">
           <TabsTrigger value="orders" className="flex items-center space-x-2">
             <ShoppingCart className="w-4 h-4" />
             <span>Orders</span>
@@ -172,6 +196,10 @@ export const DashboardAdmin = () => {
           <TabsTrigger value="coins" className="flex items-center space-x-2">
             <Coins className="w-4 h-4" />
             <span>Give Coins</span>
+          </TabsTrigger>
+          <TabsTrigger value="maintenance" className="flex items-center space-x-2">
+            <span>🚧</span>
+            <span>Maintenance</span>
           </TabsTrigger>
           <TabsTrigger value="analytics" className="flex items-center space-x-2">
             <TrendingUp className="w-4 h-4" />
@@ -356,6 +384,63 @@ export const DashboardAdmin = () => {
                 <Coins className="w-4 h-4 mr-2" />
                 Give Coins to User
               </Button>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Maintenance Mode */}
+        <TabsContent value="maintenance" className="space-y-6">
+          <Card className="vault-card">
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <span className="text-2xl">🚧</span>
+                <span>Maintenance Mode</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center space-x-4 p-4 bg-yellow-500/10 border border-yellow-500/30 rounded-lg">
+                <input 
+                  type="checkbox" 
+                  checked={maintenanceForm.isActive}
+                  onChange={(e) => setMaintenanceForm(prev => ({...prev, isActive: e.target.checked}))}
+                  className="w-6 h-6"
+                />
+                <Label className="text-lg font-semibold">
+                  {maintenanceForm.isActive ? "🟢 Maintenance Mode ACTIVE" : "🔴 Maintenance Mode OFF"}
+                </Label>
+              </div>
+
+              <div>
+                <Label>Maintenance Message</Label>
+                <Input
+                  value={maintenanceForm.message}
+                  onChange={(e) => setMaintenanceForm(prev => ({...prev, message: e.target.value}))}
+                  placeholder="MAINTENANCE BREAK"
+                  className="vault-input"
+                />
+              </div>
+
+              <div>
+                <Label>Expected Downtime</Label>
+                <Input
+                  value={maintenanceForm.downtime}
+                  onChange={(e) => setMaintenanceForm(prev => ({...prev, downtime: e.target.value}))}
+                  placeholder="30 minutes"
+                  className="vault-input"
+                />
+              </div>
+
+              <Button 
+                onClick={handleMaintenanceToggle} 
+                className={`vault-button w-full ${maintenanceForm.isActive ? 'bg-red-600 hover:bg-red-700' : 'bg-green-600 hover:bg-green-700'}`}
+              >
+                <span className="text-xl mr-2">🚧</span>
+                {maintenanceForm.isActive ? "ACTIVATE MAINTENANCE MODE" : "DEACTIVATE MAINTENANCE MODE"}
+              </Button>
+              
+              <div className="text-sm text-muted-foreground p-4 bg-card/50 rounded-lg">
+                ⚠️ When activated, ALL users will see the maintenance screen in real-time with the construction animation.
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
