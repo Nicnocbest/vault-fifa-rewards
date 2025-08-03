@@ -15,7 +15,9 @@ export const MaintenanceMode = () => {
     // Get current user to check if admin
     const getCurrentUser = async () => {
       const { data: { user } } = await supabase.auth.getUser();
-      setUserEmail(user?.email || null);
+      const email = user?.email || null;
+      console.log('Current user email:', email);
+      setUserEmail(email);
     };
 
     // Check for maintenance mode
@@ -26,6 +28,7 @@ export const MaintenanceMode = () => {
         .limit(1)
         .single();
 
+      console.log('Maintenance data:', data);
       if (data && data.is_active) {
         setMaintenance(data);
       } else {
@@ -57,6 +60,7 @@ export const MaintenanceMode = () => {
 
   // Don't show maintenance mode for admins so they can turn it off
   const isAdmin = userEmail === 'admin@vaultfut.com';
+  console.log('Is admin check:', { userEmail, isAdmin, maintenance: !!maintenance });
   
   if (!maintenance || isAdmin) return null;
 
