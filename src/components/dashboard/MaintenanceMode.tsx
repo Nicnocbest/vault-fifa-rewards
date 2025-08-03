@@ -9,8 +9,15 @@ interface MaintenanceData {
 
 export const MaintenanceMode = () => {
   const [maintenance, setMaintenance] = useState<MaintenanceData | null>(null);
+  const [userEmail, setUserEmail] = useState<string | null>(null);
 
   useEffect(() => {
+    // Get current user to check if admin
+    const getCurrentUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setUserEmail(user?.email || null);
+    };
+
     // Check for maintenance mode
     const checkMaintenance = async () => {
       const { data } = await supabase
@@ -26,6 +33,7 @@ export const MaintenanceMode = () => {
       }
     };
 
+    getCurrentUser();
     checkMaintenance();
 
     // Listen for real-time maintenance updates - INSTANT kick out!
@@ -47,7 +55,10 @@ export const MaintenanceMode = () => {
     };
   }, []);
 
-  if (!maintenance) return null;
+  // Don't show maintenance mode for admins so they can turn it off
+  const isAdmin = userEmail === 'admin@vaultfut.com';
+  
+  if (!maintenance || isAdmin) return null;
 
   return (
     <div className="fixed inset-0 z-[10000] bg-black/95 backdrop-blur-lg flex items-center justify-center">
