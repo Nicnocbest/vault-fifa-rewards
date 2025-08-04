@@ -11,6 +11,13 @@ import { toast } from "sonner";
 import { CheckCircle, XCircle, Users, ShoppingCart, TrendingUp, Megaphone, Coins } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
+import { UserSearch } from "@/components/admin/UserSearch";
+import { LootDropEditor } from "@/components/admin/LootDropEditor";
+import { ThemeSwitcher } from "@/components/admin/ThemeSwitcher";
+import { VaultSpin } from "@/components/games/VaultSpin";
+import { EventsTimer } from "@/components/events/EventsTimer";
+import { CoinVault } from "@/components/vault/CoinVault";
+
 export const DashboardAdmin = () => {
   const [broadcastForm, setBroadcastForm] = useState({
     title: "",
@@ -181,26 +188,38 @@ export const DashboardAdmin = () => {
       </div>
 
       <Tabs defaultValue="orders" className="w-full">
-        <TabsList className="grid w-full grid-cols-5 bg-card/80 backdrop-blur-sm">
-          <TabsTrigger value="orders" className="flex items-center space-x-2">
+        <TabsList className="grid w-full grid-cols-4 lg:grid-cols-8 bg-card/80 backdrop-blur-sm overflow-x-auto">
+          <TabsTrigger value="orders" className="flex items-center space-x-2 min-w-0">
             <ShoppingCart className="w-4 h-4" />
-            <span>Orders</span>
+            <span className="hidden sm:inline">Orders</span>
           </TabsTrigger>
-          <TabsTrigger value="broadcasts" className="flex items-center space-x-2">
+          <TabsTrigger value="users" className="flex items-center space-x-2 min-w-0">
+            <Users className="w-4 h-4" />
+            <span className="hidden sm:inline">Users</span>
+          </TabsTrigger>
+          <TabsTrigger value="broadcasts" className="flex items-center space-x-2 min-w-0">
             <Megaphone className="w-4 h-4" />
-            <span>Broadcasts</span>
+            <span className="hidden sm:inline">Broadcasts</span>
           </TabsTrigger>
-          <TabsTrigger value="coins" className="flex items-center space-x-2">
-            <Coins className="w-4 h-4" />
-            <span>Give Coins</span>
+          <TabsTrigger value="loot" className="flex items-center space-x-2 min-w-0">
+            <span>🎁</span>
+            <span className="hidden sm:inline">Loot</span>
           </TabsTrigger>
-          <TabsTrigger value="maintenance" className="flex items-center space-x-2">
+          <TabsTrigger value="themes" className="flex items-center space-x-2 min-w-0">
+            <span>🎨</span>
+            <span className="hidden sm:inline">Themes</span>
+          </TabsTrigger>
+          <TabsTrigger value="events" className="flex items-center space-x-2 min-w-0">
+            <span>⚡</span>
+            <span className="hidden sm:inline">Events</span>
+          </TabsTrigger>
+          <TabsTrigger value="vault" className="flex items-center space-x-2 min-w-0">
+            <span>🏦</span>
+            <span className="hidden sm:inline">Vault</span>
+          </TabsTrigger>
+          <TabsTrigger value="maintenance" className="flex items-center space-x-2 min-w-0">
             <span>🚧</span>
-            <span>Maintenance</span>
-          </TabsTrigger>
-          <TabsTrigger value="analytics" className="flex items-center space-x-2">
-            <TrendingUp className="w-4 h-4" />
-            <span>Analytics</span>
+            <span className="hidden sm:inline">Maintenance</span>
           </TabsTrigger>
         </TabsList>
 
@@ -442,7 +461,32 @@ export const DashboardAdmin = () => {
           </Card>
         </TabsContent>
 
-        {/* Analytics */}
+        {/* User Search & Management */}
+        <TabsContent value="users" className="space-y-6">
+          <UserSearch />
+        </TabsContent>
+
+        {/* Loot Drop Editor */}
+        <TabsContent value="loot" className="space-y-6">
+          <LootDropEditor />
+        </TabsContent>
+
+        {/* Theme Switcher */}
+        <TabsContent value="themes" className="space-y-6">
+          <ThemeSwitcher />
+        </TabsContent>
+
+        {/* Events Timer */}
+        <TabsContent value="events" className="space-y-6">
+          <EventsTimer />
+        </TabsContent>
+
+        {/* Vault Management */}
+        <TabsContent value="vault" className="space-y-6">
+          <CoinVault />
+        </TabsContent>
+
+        {/* Analytics - Simplified */}
         <TabsContent value="analytics" className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <Card className="vault-card">
