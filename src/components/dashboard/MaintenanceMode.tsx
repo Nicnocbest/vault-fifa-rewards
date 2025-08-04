@@ -59,10 +59,11 @@ export const MaintenanceMode = () => {
   }, []);
 
   // Don't show maintenance mode for admins so they can turn it off
+  // Also don't show if no user is logged in
   const isAdmin = userEmail === 'admin@vaultfut.com';
   console.log('Is admin check:', { userEmail, isAdmin, maintenance: !!maintenance });
   
-  if (!maintenance || isAdmin) return null;
+  if (!maintenance || isAdmin || !userEmail) return null;
 
   return (
     <div className="fixed inset-0 z-[10000] bg-black/95 backdrop-blur-lg flex items-center justify-center">
