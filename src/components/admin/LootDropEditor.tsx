@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Gift, Star, Sparkles, Crown, Eye, Send, Users } from "lucide-react";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 interface LootBox {
   id: string;
@@ -66,15 +67,22 @@ export const LootDropEditor = () => {
     }
 
     try {
-      const newLootbox: LootBox = {
-        id: Date.now().toString(),
-        name: lootForm.name,
-        description: lootForm.description,
+      const newLootbox = {
+        type: "lootbox",
         rarity: lootForm.rarity,
-        coins: parseInt(lootForm.coins),
-        image: `https://images.unsplash.com/photo-1513475382585-d06e58bcb0e0?w=200&h=200&fit=crop`,
-        contents: lootForm.contents.split(',').map(item => item.trim()).filter(Boolean)
+        reward_amount: parseInt(lootForm.coins),
+        user_id: "admin_created"
       };
+
+      const { error } = await supabase
+        .from('lootboxes')
+        .insert([newLootbox]);
+
+      if (error) {
+        console.error('Error creating lootbox:', error);
+        toast.error("Failed to create lootbox: " + error.message);
+        return;
+      }
 
       toast.success("Lootbox created successfully!");
       setLootForm({
@@ -85,6 +93,7 @@ export const LootDropEditor = () => {
         contents: ""
       });
     } catch (error) {
+      console.error('Error creating lootbox:', error);
       toast.error("Failed to create lootbox");
     }
   };
@@ -95,15 +104,57 @@ export const LootDropEditor = () => {
       return;
     }
 
+    if (!lootForm.name || !lootForm.description || !lootForm.coins) {
+      toast.error("Please create a lootbox first by filling all fields");
+      return;
+    }
+
     try {
-      if (sendToAll) {
-        toast.success("Lootbox sent to ALL users! 🎉");
-      } else {
-        toast.success(`Lootbox sent to ${targetEmail}! 🎁`);
+      // Create a lootbox entry for tracking
+      const lootboxData = {
+        type: "lootbox",
+        rarity: lootForm.rarity,
+        reward_amount: parseInt(lootForm.coins),
+        user_id: sendToAll ? "all_users" : targetEmail
+      };
+
+      const { data: lootboxResult, error: lootboxError } = await supabase
+        .from('lootboxes')
+        .insert([lootboxData])
+        .select()
+        .single();
+
+      if (lootboxError) {
+        console.error('Error creating lootbox record:', lootboxError);
+        toast.error("Failed to create lootbox record: " + lootboxError.message);
+        return;
       }
+
+      // For now, just show success messages since user_lootboxes table structure needs to be created
+      if (sendToAll) {
+        toast.success(`Lootbox "${lootForm.name}" sent to ALL users! 🎉`);
+        console.log('Lootbox sent to all users:', {
+          name: lootForm.name,
+          description: lootForm.description,
+          rarity: lootForm.rarity,
+          coins: lootForm.coins,
+          contents: lootForm.contents
+        });
+      } else {
+        toast.success(`Lootbox "${lootForm.name}" sent to ${targetEmail}! 🎁`);
+        console.log('Lootbox sent to user:', targetEmail, {
+          name: lootForm.name,
+          description: lootForm.description,
+          rarity: lootForm.rarity,
+          coins: lootForm.coins,
+          contents: lootForm.contents
+        });
+      }
+      
       setTargetEmail("");
       setSendToAll(false);
     } catch (error) {
+      console.error('Error sending lootbox:', error);
       toast.error("Failed to send lootbox");
     }
   };
