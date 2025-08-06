@@ -178,7 +178,6 @@ export const VaultSpin = () => {
             Spin the wheel daily for amazing rewards! 🎡
           </div>
         </CardHeader>
-        <CardContent>
         <CardContent className="space-y-6">
           {/* User Stats */}
           <div className="flex justify-center space-x-4">
