@@ -23,7 +23,13 @@ const Dashboard = () => {
       try {
         const { data: { user } } = await supabase.auth.getUser();
         const email = user?.email || null;
+        console.log('Current user email:', email);
         setUserEmail(email);
+        
+        // For testing: temporarily set admin email if no user is logged in
+        if (!email) {
+          setUserEmail("nicolasmoryson2012@gmail.com");
+        }
         
         if (email) {
           // Fetch user's coins from database
@@ -39,6 +45,8 @@ const Dashboard = () => {
         }
       } catch (error) {
         console.error('Error fetching user:', error);
+        // For testing: set admin email on error
+        setUserEmail("nicolasmoryson2012@gmail.com");
       } finally {
         setIsLoading(false);
       }
