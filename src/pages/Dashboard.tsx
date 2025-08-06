@@ -10,11 +10,42 @@ import { DashboardAdmin } from "@/components/dashboard/DashboardAdmin";
 import { BroadcastAlert } from "@/components/dashboard/BroadcastAlert";
 import { FullScreenBroadcast } from "@/components/dashboard/FullScreenBroadcast";
 import { MaintenanceMode } from "@/components/dashboard/MaintenanceMode";
+import { supabase } from "@/integrations/supabase/client";
 
 const Dashboard = () => {
-  const [userEmail] = useState(() => localStorage.getItem("vaultfut_email") || "");
-  const [coins] = useState(500); // Starting balance
+  const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [coins, setCoins] = useState(500);
+  const [isLoading, setIsLoading] = useState(true);
   const isAdmin = userEmail === "nicolasmoryson2012@gmail.com";
+
+  useEffect(() => {
+    const getCurrentUser = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        const email = user?.email || null;
+        setUserEmail(email);
+        
+        if (email) {
+          // Fetch user's coins from database
+          const { data: userData } = await supabase
+            .from('profiles')
+            .select('coin_balance')
+            .eq('email', email)
+            .single();
+          
+          if (userData) {
+            setCoins(userData.coin_balance);
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching user:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    getCurrentUser();
+  }, []);
 
   return (
     <div className="min-h-screen bg-background">
